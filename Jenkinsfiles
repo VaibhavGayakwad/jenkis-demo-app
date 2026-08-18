@@ -1,1 +1,53 @@
 
+pipeline {
+    agent any
+
+    stages {
+
+        stage('Checkout App') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Checkout Config') {
+            steps {
+                dir('config-repo') {
+                    git branch: 'main',
+                        url: 'https://github.com/YOUR_USERNAME/jenkins-demo-config.git'
+                }
+            }
+        }
+
+        stage('Pull Docker Image') {
+            steps {
+                sh 'docker pull nginx:alpine'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t jenkins-demo-app:1.0 .'
+            }
+        }
+
+        stage('Run Container') {
+            steps {
+                sh '''
+                    docker rm -f jenkins-demo-app || true
+
+                    docker run -d \
+                      --name jenkins-demo-app \
+                      -p 8081:80 \
+                      jenkins-demo-app:1.0
+                '''
+            }
+        }
+
+        stage('Verify') {
+            steps {
+                sh 'docker ps'
+            }
+        }
+    }
+}
